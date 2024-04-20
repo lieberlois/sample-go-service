@@ -93,3 +93,57 @@ func TestHandleListTask(t *testing.T) {
 		})
 	}
 }
+
+func TestHandleCreateTask(t *testing.T) {
+	svc := new(MockTasksServiceProxy)
+	handler := NewTasksHandler(svc)
+
+	t.Run("should return task with id", func(t *testing.T) {
+		// Arrange
+		name := "sample-name"
+		expectedId := 5
+
+		svc.create = func(t *models.Task) (*models.Task, error) {
+			t.Id = int64(expectedId)
+			return t, nil
+		}
+
+		task := &models.Task{
+			Name: name,
+		}
+
+		body, _ := json.Marshal(task)
+		req, err := http.NewRequest("POST", "/tasks", bytes.NewBuffer(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.HandleFunc("/tasks", handler.handleCreateTask).Methods("POST")
+
+		// Act
+		router.ServeHTTP(rr, req)
+
+		// Assert
+		if rr.Code != http.StatusOK {
+			t.Errorf("Expected HTTP status %d but got %d instead", http.StatusOK, rr.Code)
+		}
+
+		// Check the response body is what we expect
+		actual := new(models.Task)
+		err = json.NewDecoder(rr.Body).Decode(actual)
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		if actual.Id != int64(expectedId) {
+			t.Errorf("expected ID to be %d but got %d", expectedId, actual.Id)
+		}
+
+		if actual.Name != name {
+			t.Errorf("expected name to be %s but got %s", name, actual.Name)
+		}
+	})
+}
