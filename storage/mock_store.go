@@ -5,23 +5,23 @@ import (
 )
 
 type MockStore struct {
-	tasks []*models.Task
+	Tasks []*models.Task
 }
 
 func NewMockStore() *MockStore {
 	return &MockStore{
-		tasks: make([]*models.Task, 0),
+		Tasks: make([]*models.Task, 0),
 	}
 }
 
 func (s *MockStore) CreateTask(task *models.Task) (*models.Task, error) {
-	id := int64(len(s.tasks))
+	id := int64(len(s.Tasks))
 	task.Id = id
 
-	s.tasks = append(s.tasks, task)
+	s.Tasks = append(s.Tasks, task)
 	return task, nil
 }
 
 func (s *MockStore) ListTasks() ([]*models.Task, error) {
-	return s.tasks, nil
+	return s.Tasks, nil
 }
