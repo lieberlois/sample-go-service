@@ -27,7 +27,7 @@ func (mts *MockTasksServiceProxy) listTasks() ([]*models.Task, error) {
 
 func TestHandleListTask(t *testing.T) {
 	svc := new(MockTasksServiceProxy)
-	handler := NewTasksHandler(svc)
+	handler := HandleGetTask(svc)
 
 	sampleModelList := []*models.Task{
 		{
@@ -41,6 +41,7 @@ func TestHandleListTask(t *testing.T) {
 		name     string
 		list     func() ([]*models.Task, error)
 		expected []*models.Task
+		status   int
 	}{
 		{
 			name: "empty list",
@@ -48,6 +49,7 @@ func TestHandleListTask(t *testing.T) {
 				return sampleModelList, nil
 			},
 			expected: sampleModelList,
+			status:   http.StatusOK,
 		},
 	}
 
@@ -63,14 +65,14 @@ func TestHandleListTask(t *testing.T) {
 
 			rr := httptest.NewRecorder()
 			router := mux.NewRouter()
-			router.HandleFunc("/tasks", handler.handleGetTask).Methods("GET")
+			router.Handle("/tasks", handler).Methods("GET")
 
 			// Act
 			router.ServeHTTP(rr, req)
 
 			// Assert
-			if rr.Code != http.StatusOK {
-				t.Errorf("Expected HTTP status %d but got %d instead", http.StatusOK, rr.Code)
+			if rr.Code != d.status {
+				t.Errorf("Expected HTTP status %d but got %d instead", d.status, rr.Code)
 			}
 
 			// Check the response body is what we expect
@@ -96,12 +98,13 @@ func TestHandleListTask(t *testing.T) {
 
 func TestHandleCreateTask(t *testing.T) {
 	svc := new(MockTasksServiceProxy)
-	handler := NewTasksHandler(svc)
+	handler := HandleCreateTask(svc)
 
 	t.Run("should return task with id", func(t *testing.T) {
 		// Arrange
 		name := "sample-name"
 		expectedId := 5
+		expectedStatus := http.StatusCreated
 
 		svc.create = func(t *models.Task) (*models.Task, error) {
 			t.Id = int64(expectedId)
@@ -120,14 +123,14 @@ func TestHandleCreateTask(t *testing.T) {
 
 		rr := httptest.NewRecorder()
 		router := mux.NewRouter()
-		router.HandleFunc("/tasks", handler.handleCreateTask).Methods("POST")
+		router.Handle("/tasks", handler).Methods("POST")
 
 		// Act
 		router.ServeHTTP(rr, req)
 
 		// Assert
-		if rr.Code != http.StatusOK {
-			t.Errorf("Expected HTTP status %d but got %d instead", http.StatusOK, rr.Code)
+		if rr.Code != expectedStatus {
+			t.Errorf("Expected HTTP status %d but got %d instead", expectedStatus, rr.Code)
 		}
 
 		// Check the response body is what we expect

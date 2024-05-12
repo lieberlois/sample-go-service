@@ -16,6 +16,7 @@ func NewMySQLStorage(cfg mysql.Config) *MySQLStorage {
 	if err != nil {
 		log.Fatal(err)
 	}
+	db.SetMaxIdleConns(0)
 
 	err = db.Ping()
 	if err != nil {
