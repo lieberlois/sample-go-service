@@ -58,15 +58,20 @@ func run(ctx context.Context, getEnv func(string, string) string) error {
 	}
 	fmt.Println("starting server")
 
+	serverErrCh := make(chan error, 1)
+	defer close(serverErrCh)
+
 	go func() {
 		log.Printf("listening on %s\n", httpServer.Addr)
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Fprintf(os.Stderr, "error listening and serving: %s\n", err)
-			os.Exit(1)
-		}
+		serverErrCh <- httpServer.ListenAndServe()
 	}()
 
-	<-ctx.Done()
+	select {
+	case <-ctx.Done():
+		break
+	case err := <-serverErrCh:
+		return err
+	}
 
 	doneCh := make(chan struct{})
 
